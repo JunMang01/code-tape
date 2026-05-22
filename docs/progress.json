@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-22T07:48:25Z",
+  "updatedAt": "2026-05-22T07:58:32Z",
   "students": {
     "ceilf6": {
       "activeIssue": 10,
@@ -39,7 +39,7 @@
       "totalScore": 0
     },
     "yangchloeeeee": {
-      "activeIssue": null,
+      "activeIssue": 7,
       "completedIssues": [
         4
       ],
@@ -68,6 +68,19 @@
       "status": "claimed",
       "assignee": "Suxian2001",
       "claimedAt": "2026-05-22T04:39:25Z",
+      "closedAt": null,
+      "mergedPr": null
+    },
+    "7": {
+      "number": 7,
+      "title": "[调研] HackerRank CodePair 面试录制与回放",
+      "score": 1,
+      "stack": [
+        "research"
+      ],
+      "status": "claimed",
+      "assignee": "yangchloeeeee",
+      "claimedAt": "2026-05-22T07:58:32Z",
       "closedAt": null,
       "mergedPr": null
     },
