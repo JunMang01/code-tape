@@ -4,6 +4,8 @@ ignore
 
 superpowers
 
+.cursor
+
 node_modules
 dist
 dist-ssr
