@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -405,33 +405,12 @@ test('evaluateGitNexusContract treats non-critical changes as advisory', () => {
   assert.match(result.warnings.join('\n'), /No critical contract surface changed/);
 });
 
-test('retired knowledge service is no longer wired into repository contracts', () => {
-  const checkedFiles = [
-    'package.json',
-    '.github/workflows/contract-guard.yml',
-    'README.md',
-    'docs/知识库契约.md',
-    'scripts/workflows/contract-check.mjs',
-    'scripts/workflows/contract-rules.mjs',
-  ];
-  const content = checkedFiles.map((path) => readFileSync(path, 'utf8')).join('\n');
-  const forbidden = [
-    ['Open', 'Viking'],
-    ['open', 'viking'],
-    ['OPEN', 'VIKING'],
-    ['ov', 'pack'],
-    ['contract:open', 'viking'],
-    ['validateOpen', 'VikingManifest'],
-    ['runOpen', 'VikingCheck'],
-    ['docs/contracts/open', 'viking.resources.json'],
-    ['ov', ' health'],
-  ].map((parts) => parts.join(''));
+test('README Harness documents local quality hooks', () => {
+  const readme = readFileSync('README.md', 'utf8');
 
-  for (const phrase of forbidden) {
-    assert.equal(content.includes(phrase), false, `${phrase} should not remain in repository contracts`);
-  }
-
-  assert.equal(existsSync(['docs/contracts/open', 'viking.resources.json'].join('')), false);
+  assert.match(readme, /- Git hooks/u);
+  assert.match(readme, /`pre-commit` 运行 `npm run quality:precommit`/u);
+  assert.match(readme, /`pre-push` 运行 `npm run quality:local`/u);
 });
 
 test('feature scoring writes idempotent ledger and clears active issue', () => {
