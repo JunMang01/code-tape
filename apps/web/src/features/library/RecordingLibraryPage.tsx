@@ -584,7 +584,8 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  // Revoke in a later macrotask so browsers can start consuming the download URL.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function formatCreatedAt(value: string): string {
