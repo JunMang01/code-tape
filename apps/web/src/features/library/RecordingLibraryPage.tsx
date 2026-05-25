@@ -19,6 +19,7 @@ export function RecordingLibraryPage() {
   const repository = useMemo(() => createRecordingStore(), []);
   const [items, setItems] = useState<RecordingListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [feedbackDialog, setFeedbackDialog] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [pendingRenameId, setPendingRenameId] = useState<string | null>(null);
   const [pendingRenameValue, setPendingRenameValue] = useState("");
@@ -32,14 +33,15 @@ export function RecordingLibraryPage() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     let loadError: string | null = null;
     try {
       const list = await repository.list();
       setItems(list);
-      
+      setLoadError(null);
     } catch (err) {
       loadError = `读取失败：${(err as Error).message}`;
-      
+      setLoadError(loadError);
     } finally {
       setLoading(false);
     }
@@ -159,7 +161,7 @@ export function RecordingLibraryPage() {
   }, [quota]);
 
   const canImport = !loading && !importing;
-  const showEmpty = !loading && items.length === 0;
+  const showEmpty = !loading && !loadError && items.length === 0;
 
   const openImportPicker = () => {
     fileInputRef.current?.click();
@@ -203,7 +205,18 @@ export function RecordingLibraryPage() {
         </div>
       </header>
 
-      {showEmpty ? (
+      {loadError ? (
+        <div className="flex flex-col gap-3 rounded-md border border-danger/40 bg-danger/10 p-4">
+          <p className="text-sm text-danger">{loadError}</p>
+          <button
+            type="button"
+            className="w-fit rounded-md border border-danger/50 px-3 py-1.5 text-xs font-medium text-danger"
+            onClick={() => void refresh()}
+          >
+            重试
+          </button>
+        </div>
+      ) : showEmpty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border bg-surface/60 p-12 text-center">
           <p className="font-display text-lg">还没有录制</p>
           <p className="max-w-sm text-sm text-muted">

@@ -84,14 +84,20 @@ describe("RecordingLibraryPage", () => {
     expect(await screen.findByText("\u8fd8\u6ca1\u6709\u5f55\u5236")).toBeInTheDocument();
   });
 
-  it("closes loading dialog first, then shows load error dialog", async () => {
+  it("keeps persistent load error state after closing load-failed dialog", async () => {
     repositoryMocks.list.mockRejectedValueOnce(new Error("idb read failed"));
     renderPage();
     expect(screen.getByRole("status")).toHaveTextContent("\u52a0\u8f7d\u4e2d");
     await waitForElementToBeRemoved(() => screen.queryByRole("status"));
-    expect(await screen.findByRole("dialog")).toHaveTextContent(
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent(
       "\u8bfb\u53d6\u5931\u8d25\uff1aidb read failed",
     );
+    fireEvent.click(screen.getByRole("button", { name: "\u786e\u8ba4" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("\u8bfb\u53d6\u5931\u8d25\uff1aidb read failed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "\u91cd\u8bd5" })).toBeInTheDocument();
+    expect(screen.queryByText("\u8fd8\u6ca1\u6709\u5f55\u5236")).not.toBeInTheDocument();
   });
 
   it("renders recording row and replay link", async () => {
