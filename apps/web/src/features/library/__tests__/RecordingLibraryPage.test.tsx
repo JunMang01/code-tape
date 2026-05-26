@@ -131,6 +131,21 @@ describe("RecordingLibraryPage", () => {
     expect(repositoryMocks.list).toHaveBeenCalledTimes(2);
   });
 
+  it("rejects blank rename title without calling repository", async () => {
+    repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    fireEvent.click(screen.getByRole("button", { name: "\u91cd\u547d\u540d" }));
+    fireEvent.change(screen.getByLabelText(`\u91cd\u547d\u540d ${BASE_TITLE}`), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "\u4fdd\u5b58" }));
+
+    expect(await screen.findByText("\u6807\u9898\u4e0d\u80fd\u4e3a\u7a7a\u3002")).toBeInTheDocument();
+    expect(repositoryMocks.rename).not.toHaveBeenCalled();
+  });
+
   it("deletes a recording only after confirm", async () => {
     repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
     renderPage();
@@ -146,6 +161,20 @@ describe("RecordingLibraryPage", () => {
     });
   });
 
+  it("keeps delete confirmation open when delete fails", async () => {
+    repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
+    repositoryMocks.remove.mockRejectedValueOnce(new Error("idb delete failed"));
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    fireEvent.click(screen.getByRole("button", { name: "\u5220\u9664" }));
+    fireEvent.click(screen.getByRole("button", { name: "\u786e\u8ba4\u5220\u9664" }));
+
+    expect(await screen.findByText("\u5220\u9664\u5931\u8d25\uff1aidb delete failed")).toBeInTheDocument();
+    expect(screen.getByText(`\u786e\u8ba4\u5220\u9664\u300c${BASE_TITLE}\u300d\uff1f`)).toBeInTheDocument();
+    expect(repositoryMocks.list).toHaveBeenCalledTimes(1);
+  });
+
   it("exports a recording to zip", async () => {
     repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
@@ -159,6 +188,18 @@ describe("RecordingLibraryPage", () => {
       expect(URL.createObjectURL).toHaveBeenCalled();
       expect(URL.revokeObjectURL).toHaveBeenCalled();
     });
+  });
+
+  it("shows export failure dialog", async () => {
+    repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
+    repositoryMocks.exportZip.mockRejectedValueOnce(new Error("zip failed"));
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    fireEvent.click(screen.getByRole("button", { name: "\u5bfc\u51fa ZIP" }));
+
+    expect(await screen.findByRole("dialog")).toHaveTextContent("\u5bfc\u51fa\u5931\u8d25\uff1azip failed");
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
   });
 
   it("imports valid zip and refreshes list", async () => {
@@ -194,5 +235,36 @@ describe("RecordingLibraryPage", () => {
     expect(await screen.findByRole("dialog")).toHaveTextContent(
       "\u5bfc\u5165\u5931\u8d25\uff1a\u538b\u7f29\u5305\u6821\u9a8c\u4e0d\u901a\u8fc7",
     );
+  });
+
+  it("shows quota guidance when zip import exceeds local storage", async () => {
+    repositoryMocks.importZip.mockResolvedValueOnce({
+      ok: false,
+      reason: "quota-exceeded",
+      message: "quota exceeded",
+    });
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    const file = new File(["zip"], "large.zip", { type: "application/zip" });
+    fireEvent.change(screen.getByLabelText("\u5bfc\u5165 zip \u6587\u4ef6"), { target: { files: [file] } });
+
+    expect(await screen.findByRole("dialog")).toHaveTextContent(
+      "\u672c\u5730\u5b58\u50a8\u7a7a\u95f4\u4e0d\u8db3",
+    );
+    expect(repositoryMocks.list).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers list after load failure retry", async () => {
+    repositoryMocks.list.mockRejectedValueOnce(new Error("idb read failed")).mockResolvedValueOnce([BASE_ITEM]);
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    fireEvent.click(await screen.findByRole("button", { name: "\u786e\u8ba4" }));
+    fireEvent.click(screen.getByRole("button", { name: "\u91cd\u8bd5" }));
+
+    expect(await screen.findByRole("link", { name: BASE_TITLE })).toBeInTheDocument();
+    expect(screen.queryByText("\u8bfb\u53d6\u5931\u8d25\uff1aidb read failed")).not.toBeInTheDocument();
+    expect(repositoryMocks.list).toHaveBeenCalledTimes(2);
   });
 });
