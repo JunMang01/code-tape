@@ -160,7 +160,7 @@ export function RecordingLibraryPage() {
     return `本地存储 ${usageMB} / ${quotaMB} MB (${ratio}%)`;
   }, [quota]);
 
-  const canImport = !loading && !importing;
+  const canImport = !loading && !importing && busyKey === null;
   const showEmpty = !loading && !loadError && items.length === 0;
 
   const openImportPicker = () => {

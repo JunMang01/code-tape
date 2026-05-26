@@ -190,6 +190,31 @@ describe("RecordingLibraryPage", () => {
     });
   });
 
+  it("disables zip import while an item operation is busy", async () => {
+    repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    let finishExport: (blob: Blob) => void = () => {};
+    repositoryMocks.exportZip.mockImplementationOnce(
+      () =>
+        new Promise<Blob>((resolve) => {
+          finishExport = resolve;
+        }),
+    );
+    renderPage();
+    await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+
+    fireEvent.click(screen.getByRole("button", { name: "\u5bfc\u51fa ZIP" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "\u5bfc\u5165 ZIP" })).toBeDisabled();
+    });
+
+    finishExport(new Blob(["zip"], { type: "application/zip" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "\u5bfc\u5165 ZIP" })).not.toBeDisabled();
+    });
+  });
+
   it("shows export failure dialog", async () => {
     repositoryMocks.list.mockResolvedValue([BASE_ITEM]);
     repositoryMocks.exportZip.mockRejectedValueOnce(new Error("zip failed"));
